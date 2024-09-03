@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import styles from './Rating.module.css';
+import { Box, IconButton } from '@mui/material';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 
 interface RatingProps {
 	onRate?: (rating: number) => void;
@@ -10,29 +12,30 @@ const Rating: React.FC<RatingProps> = ({ onRate }) => {
 	const [hover, setHover] = useState<number>(0);
 
 	return (
-		<div className={styles.rating}>
+		<Box sx={{ display: 'flex' }}>
 			{[...Array(5)].map((_, index) => {
 				const starRating = index + 1;
 
 				return (
-					<button
-						type='button'
+					<IconButton
 						key={index}
-						className={`${styles.star} ${
-							starRating <= (hover || rating) ? styles.filled : ''
-						}`}
 						onClick={() => {
 							setRating(starRating);
 							if (onRate) onRate(starRating);
 						}}
 						onMouseEnter={() => setHover(starRating)}
 						onMouseLeave={() => setHover(0)}
+						color='primary'
 					>
-						&#9733;
-					</button>
+						{starRating <= (hover || rating) ? (
+							<StarIcon />
+						) : (
+							<StarBorderIcon />
+						)}
+					</IconButton>
 				);
 			})}
-		</div>
+		</Box>
 	);
 };
 

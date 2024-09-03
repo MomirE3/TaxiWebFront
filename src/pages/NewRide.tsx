@@ -1,6 +1,4 @@
 import { FC, useState, useEffect } from 'react';
-import styles from './NewRide.module.css';
-import Modal from '../components/ui/Modal';
 import {
 	CreateRide,
 	CreateRideResponse,
@@ -12,8 +10,18 @@ import {
 	UpdateRideRequest,
 } from '../models/Ride';
 import { RideServiceType } from '../Services/RideService';
-import Rating from '../components/ui/Rating';
 import { DriverServiceType } from '../Services/DriverService';
+import {
+	Box,
+	TextField,
+	Button,
+	Typography,
+	Dialog,
+	DialogTitle,
+	DialogContent,
+	DialogActions,
+} from '@mui/material';
+import Rating from '../components/ui/Rating';
 
 interface IProps {
 	rideService: RideServiceType;
@@ -36,7 +44,7 @@ const NewRide: FC<IProps> = (props) => {
 	const [isRideActive, setIsRideActive] = useState(false);
 	const [rideAccepted, setRideAccepted] = useState(false);
 	const [isRatingOpen, setIsRatingOpen] = useState<boolean>(false);
-	const [ratindDriverInformations, setRatingDriverInformation] =
+	const [ratingDriverInformation, setRatingDriverInformation] =
 		useState<DriverRating | null>(null);
 
 	const [acceptedRide, setAcceptedRide] = useState<CreateRideResponse | null>(
@@ -166,9 +174,9 @@ const NewRide: FC<IProps> = (props) => {
 	]);
 
 	const handleRate = async (rating: number) => {
-		if (ratindDriverInformations !== null) {
+		if (ratingDriverInformation !== null) {
 			const ratingRequest = {
-				...ratindDriverInformations,
+				...ratingDriverInformation,
 				Value: rating,
 			};
 			try {
@@ -224,11 +232,13 @@ const NewRide: FC<IProps> = (props) => {
 
 	return (
 		<>
-			<div className={styles.container}>
-				<h2 className={styles.heading}>Create a new Ride</h2>
-				<div className={styles.formGroup}>
-					<input
-						placeholder='Start Address'
+			<Box sx={{ maxWidth: 600, margin: 'auto', padding: 3 }}>
+				<Typography variant='h4' gutterBottom>
+					Create a new Ride
+				</Typography>
+				<Box sx={{ marginBottom: 2 }}>
+					<TextField
+						label='Start Address'
 						value={formData.StartAddress}
 						type='text'
 						onChange={(e) => {
@@ -237,12 +247,13 @@ const NewRide: FC<IProps> = (props) => {
 								StartAddress: e.target.value,
 							}));
 						}}
-						className={styles.input}
+						fullWidth
+						variant='outlined'
 					/>
-				</div>
-				<div className={styles.formGroup}>
-					<input
-						placeholder='End Address'
+				</Box>
+				<Box sx={{ marginBottom: 2 }}>
+					<TextField
+						label='End Address'
 						value={formData.EndAddress}
 						type='text'
 						onChange={(e) => {
@@ -251,67 +262,81 @@ const NewRide: FC<IProps> = (props) => {
 								EndAddress: e.target.value,
 							}));
 						}}
-						className={styles.input}
+						fullWidth
+						variant='outlined'
 					/>
-				</div>
-				<button
+				</Box>
+				<Button
+					variant='contained'
+					color='primary'
 					onClick={handleOrderClick}
-					className={styles.button}
 					disabled={isRideActive}
+					fullWidth
 				>
 					Order
-				</button>
-			</div>
+				</Button>
+			</Box>
 			{estimateResponse && (
-				<Modal
-					isOpen={isModalOpen}
-					onClose={toggleModal}
-					title='My Modal'
-					disabled={isRideActive}
-				>
-					<p>Price: {estimateResponse.priceEstimate}</p>
-					{arrivalTime === null && (
-						<p>
-							Estimate time{' '}
-							{formatTime(
-								estimateResponse.estimatedDriverArrivalSeconds
-							)}
-						</p>
-					)}
-					<p>
-						Countdown to driver's arrival:{' '}
-						{arrivalTime !== null ? formatTime(arrivalTime) : ''}
-					</p>
-					{rideDuration !== null && (
-						<p>
-							Countdown to end of ride: {formatTime(rideDuration)}
-						</p>
-					)}
-					<button
-						className={styles.buttonModal}
-						onClick={toggleModal}
-						disabled={isRideActive}
-					>
-						Close
-					</button>
-					<button
-						onClick={handleNewRideClick}
-						disabled={isRideActive}
-						className={styles.buttonModal}
-					>
-						Accept ride
-					</button>
-				</Modal>
+				<Dialog open={isModalOpen} onClose={toggleModal}>
+					<DialogTitle>Ride Details</DialogTitle>
+					<DialogContent>
+						<Typography>
+							Price: {estimateResponse.priceEstimate}
+						</Typography>
+						{arrivalTime === null && (
+							<Typography>
+								Estimate time{' '}
+								{formatTime(
+									estimateResponse.estimatedDriverArrivalSeconds
+								)}
+							</Typography>
+						)}
+						<Typography>
+							Countdown to driver's arrival:{' '}
+							{arrivalTime !== null
+								? formatTime(arrivalTime)
+								: ''}
+						</Typography>
+						{rideDuration !== null && (
+							<Typography>
+								Countdown to end of ride:{' '}
+								{formatTime(rideDuration)}
+							</Typography>
+						)}
+					</DialogContent>
+					<DialogActions>
+						<Button
+							onClick={toggleModal}
+							disabled={isRideActive}
+							color='secondary'
+						>
+							Close
+						</Button>
+						<Button
+							onClick={handleNewRideClick}
+							disabled={isRideActive}
+							color='primary'
+						>
+							Accept ride
+						</Button>
+					</DialogActions>
+				</Dialog>
 			)}
 			{isRatingOpen && (
-				<Modal
-					isOpen={isRatingOpen}
-					onClose={toggleModalRating}
-					title='My Modal'
-				>
-					<h2>Leave us your rating for the ride!</h2>
-					<Rating onRate={handleRate} />
-				</Modal>
+				<Dialog open={isRatingOpen} onClose={toggleModalRating}>
+					<DialogTitle>Rate the Ride</DialogTitle>
+					<DialogContent>
+						<Typography gutterBottom>
+							Leave us your rating for the ride!
+						</Typography>
+						<Rating onRate={handleRate} />
+					</DialogContent>
+					<DialogActions>
+						<Button onClick={toggleModalRating} color='primary'>
+							Close
+						</Button>
+					</DialogActions>
+				</Dialog>
 			)}
 		</>
 	);

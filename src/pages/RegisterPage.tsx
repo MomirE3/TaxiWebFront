@@ -1,7 +1,6 @@
-import { ChangeEvent, FC, useState } from 'react';
+import { ChangeEvent, FC, useEffect, useState } from 'react';
 import { RegisterData } from '../models/Auth/RegisterData';
 import { UserType } from '../models/Auth/UserType';
-import styles from './RegisterPage.module.css';
 import { EMAIL_REGEX, PASSWORD_REGEX } from '../utils/Regex';
 import { AuthServiceType } from '../Services/AuthService';
 import { Link, useNavigate } from 'react-router-dom';
@@ -10,6 +9,17 @@ import { BlobServiceType } from '../Services/BlobService';
 import { SHA256 } from 'crypto-js';
 import { GoogleAuth } from '../components/auth/GoogleAuth';
 import { GoogleAuthService } from '../Services/Google/GoogleAuth';
+import {
+	Box,
+	TextField,
+	Button,
+	Typography,
+	Radio,
+	RadioGroup,
+	FormControlLabel,
+	FormControl,
+	FormLabel,
+} from '@mui/material';
 
 interface IProps {
 	authService: AuthServiceType;
@@ -19,7 +29,7 @@ interface IProps {
 export const RegisterPage: FC<IProps> = (props) => {
 	const navigate = useNavigate();
 
-	const [registerFormData, setRegisterFormData] = useState({
+	const [registerFormData, setRegisterFormData] = useState<RegisterData>({
 		Username: '',
 		Email: '',
 		Password: '',
@@ -63,12 +73,10 @@ export const RegisterPage: FC<IProps> = (props) => {
 		if (e.target.files && e.target.files.length > 0) {
 			setLocalImageName(e.target.files[0].name);
 			setLocalImagePath(e.target.files[0]);
-			console.log(e.target.files[0]);
 		}
 	};
 
-	console.log(localImagePath);
-	console.log(typeof localImagePath);
+	useEffect(() => {}, [localImagePath]);
 
 	async function onRegister() {
 		if (!isValid() || !localImagePath || !localImageName) {
@@ -100,10 +108,6 @@ export const RegisterPage: FC<IProps> = (props) => {
 		formData.append('fileName', localImageName);
 		const hashedEmail = SHA256(registerFormData.Email).toString();
 
-		console.log(formData);
-		console.log(file);
-		console.log(localImageName);
-		console.log(hashedEmail);
 		const uploadImgRes = await props.blobService.UploadProfileImage(
 			formData,
 			hashedEmail
@@ -150,21 +154,35 @@ export const RegisterPage: FC<IProps> = (props) => {
 		return `${year}-${month}-${day}`;
 	}
 
-	console.log(registerFormData.DateOfBirth);
-
 	return (
-		<div className={styles.form}>
-			<input
-				type='file'
-				id='image'
-				name='image'
-				accept='image/*'
-				onChange={handleImageChange}
-				className={styles.input}
-			/>
+		<Box
+			component='form'
+			sx={{
+				display: 'flex',
+				flexDirection: 'column',
+				gap: 2,
+				maxWidth: 400,
+				margin: 'auto',
+				height: '100vh',
+				justifyContent: 'center',
+			}}
+			onSubmit={(e) => {
+				e.preventDefault();
+				onRegister();
+			}}
+		>
+			<Button variant='contained' component='label'>
+				Upload Image
+				<input
+					type='file'
+					hidden
+					accept='image/*'
+					onChange={handleImageChange}
+				/>
+			</Button>
 
 			{localImagePath && (
-				<div className={styles.imagePreview}>
+				<Box sx={{ textAlign: 'center', mt: 2 }}>
 					<img
 						width={100}
 						src={
@@ -174,13 +192,54 @@ export const RegisterPage: FC<IProps> = (props) => {
 						}
 						alt='Preview'
 					/>
-				</div>
+				</Box>
 			)}
 
-			<input
-				className={`${styles.input} ${
-					registerFormValid.Username ? '' : styles.invalid
-				}`}
+			<TextField
+				label='Full Name'
+				variant='outlined'
+				error={!registerFormValid.FullName}
+				helperText={
+					!registerFormValid.FullName
+						? 'Full name must be at least 4 characters long'
+						: ''
+				}
+				onChange={(e) => {
+					const val = e.target.value;
+					setRegisterFormData({ ...registerFormData, FullName: val });
+					setRegisterFormValid({
+						...registerFormValid,
+						FullName: val.length > 3,
+					});
+				}}
+				value={registerFormData.FullName}
+				fullWidth
+			/>
+
+			<TextField
+				label='Date of Birth'
+				variant='outlined'
+				type='date'
+				onChange={(e) => {
+					const val = e.target.value;
+					setRegisterFormData({
+						...registerFormData,
+						DateOfBirth: val,
+					});
+				}}
+				value={formatDateForInput(registerFormData.DateOfBirth)}
+				fullWidth
+			/>
+
+			<TextField
+				label='Username'
+				variant='outlined'
+				error={!registerFormValid.Username}
+				helperText={
+					!registerFormValid.Username
+						? 'Username must be at least 4 characters long'
+						: ''
+				}
 				onChange={(e) => {
 					const val = e.target.value;
 					setRegisterFormData({ ...registerFormData, Username: val });
@@ -189,15 +248,17 @@ export const RegisterPage: FC<IProps> = (props) => {
 						Username: val.length >= 3,
 					});
 				}}
-				placeholder='Username:'
 				value={registerFormData.Username}
-				type='text'
+				fullWidth
 			/>
 
-			<input
-				className={`${styles.input} ${
-					registerFormValid.Email ? '' : styles.invalid
-				}`}
+			<TextField
+				label='Email'
+				variant='outlined'
+				error={!registerFormValid.Email}
+				helperText={
+					!registerFormValid.Email ? 'Invalid email format' : ''
+				}
 				onChange={(e) => {
 					const val = e.target.value;
 					setRegisterFormData({ ...registerFormData, Email: val });
@@ -206,16 +267,22 @@ export const RegisterPage: FC<IProps> = (props) => {
 						Email: EMAIL_REGEX.test(val),
 					});
 				}}
-				placeholder='Email:'
 				value={registerFormData.Email}
-				type='text'
+				type='email'
+				fullWidth
 			/>
 
 			{!usedGoogleAuth && (
-				<input
-					className={`${styles.input} ${
-						registerFormValid.Password ? '' : styles.invalid
-					}`}
+				<TextField
+					label='Password'
+					variant='outlined'
+					type='password'
+					error={!registerFormValid.Password}
+					helperText={
+						!registerFormValid.Password
+							? 'Password must be at least 8 characters long and include a number and a special character'
+							: ''
+					}
 					onChange={(e) => {
 						const val = e.target.value;
 						setRegisterFormData({
@@ -227,49 +294,20 @@ export const RegisterPage: FC<IProps> = (props) => {
 							Password: PASSWORD_REGEX.test(val),
 						});
 					}}
-					placeholder='Password:'
 					value={registerFormData.Password ?? ''}
-					type='password'
+					fullWidth
 				/>
 			)}
 
-			<input
-				className={`${styles.input} ${
-					registerFormValid.FullName ? '' : styles.invalid
-				}`}
-				onChange={(e) => {
-					const val = e.target.value;
-					setRegisterFormData({ ...registerFormData, FullName: val });
-					setRegisterFormValid({
-						...registerFormValid,
-						FullName: val.length > 3,
-					});
-				}}
-				placeholder='Full Name:'
-				value={registerFormData.FullName}
-				type='text'
-			/>
-
-			<input
-				className={`${styles.input} ${
-					registerFormValid.DateOfBirth ? '' : styles.invalid
-				}`}
-				onChange={(e) => {
-					const val = e.target.value;
-					setRegisterFormData({
-						...registerFormData,
-						DateOfBirth: val,
-					});
-				}}
-				placeholder='Date of Birth:'
-				value={formatDateForInput(registerFormData.DateOfBirth)}
-				type='date'
-			/>
-
-			<input
-				className={`${styles.input} ${
-					registerFormValid.Address ? '' : styles.invalid
-				}`}
+			<TextField
+				label='Address'
+				variant='outlined'
+				error={!registerFormValid.Address}
+				helperText={
+					!registerFormValid.Address
+						? 'Address must be at least 4 characters long'
+						: ''
+				}
 				onChange={(e) => {
 					const val = e.target.value;
 					setRegisterFormData({ ...registerFormData, Address: val });
@@ -278,85 +316,73 @@ export const RegisterPage: FC<IProps> = (props) => {
 						Address: val.length > 3,
 					});
 				}}
-				placeholder='Address:'
 				value={registerFormData.Address}
-				type='text'
+				fullWidth
 			/>
 
 			{!usedGoogleAuth && (
-				<div className={styles.radioGroup}>
-					<label>
-						<input
-							type='radio'
-							name='userType'
+				<FormControl component='fieldset'>
+					<FormLabel component='legend'>User Type</FormLabel>
+					<RadioGroup
+						row
+						value={registerFormData.Type}
+						onChange={(e) => {
+							setRegisterFormData({
+								...registerFormData,
+								Type: e.target.value as unknown as UserType,
+							});
+						}}
+					>
+						<FormControlLabel
 							value={UserType.Client}
-							checked={registerFormData.Type === UserType.Client}
-							onChange={() =>
-								setRegisterFormData({
-									...registerFormData,
-									Type: UserType.Client,
-								})
-							}
-							className={styles.radioButton}
+							control={<Radio />}
+							label='Client'
 						/>
-						Client
-					</label>
-					<label>
-						<input
-							type='radio'
-							name='userType'
+						<FormControlLabel
 							value={UserType.Driver}
-							checked={registerFormData.Type === UserType.Driver}
-							onChange={() =>
-								setRegisterFormData({
-									...registerFormData,
-									Type: UserType.Driver,
-								})
-							}
-							className={styles.radioButton}
+							control={<Radio />}
+							label='Driver'
 						/>
-						Driver
-					</label>
-				</div>
+					</RadioGroup>
+				</FormControl>
 			)}
 
-			<div>
-				<GoogleAuth
-					googleAuthService={GoogleAuthService}
-					setUserInfo={(userInfo) => {
-						console.log(userInfo);
-						setRegisterFormData({
-							...registerFormData,
-							Password: undefined,
-							Email: userInfo.email,
-							FullName: userInfo.name,
-							Username: getFirstPartOfEmail(userInfo.email),
-							DateOfBirth: new Date().toISOString(),
-							Address: 'Random Address',
-							Type: UserType.Client,
-						});
-						setRegisterFormValid({
-							Address: true,
-							DateOfBirth: true,
-							Email: EMAIL_REGEX.test(userInfo.email),
-							FullName: userInfo.name.length > 3,
-							ImagePath: true,
-							Password: true,
-							Username: true,
-							Type: true,
-						});
-						setLocalImagePath(userInfo.picture);
-						setLocalImageName('image.png');
-						setUsedGoogleAuth(true);
-					}}
-				/>
-			</div>
-			<Link to='/Login' className={styles.link}>
-				Already have an account? Log In
-			</Link>
-			<button className={styles.button} onClick={onRegister}>
+			<GoogleAuth
+				googleAuthService={GoogleAuthService}
+				setUserInfo={(userInfo) => {
+					setRegisterFormData({
+						...registerFormData,
+						Password: undefined,
+						Email: userInfo.email,
+						FullName: userInfo.name,
+						Username: getFirstPartOfEmail(userInfo.email),
+						DateOfBirth: new Date().toISOString(),
+						Address: 'Random Address',
+						Type: UserType.Client,
+					});
+					setRegisterFormValid({
+						Address: true,
+						DateOfBirth: true,
+						Email: EMAIL_REGEX.test(userInfo.email),
+						FullName: userInfo.name.length > 3,
+						ImagePath: true,
+						Password: true,
+						Username: true,
+						Type: true,
+					});
+					setLocalImagePath(userInfo.picture);
+					setLocalImageName('image.png');
+					setUsedGoogleAuth(true);
+				}}
+			/>
+
+			<Typography variant='body2'>
+				Already have an account? <Link to='/Login'>Log In</Link>
+			</Typography>
+
+			<Button type='submit' variant='contained' color='primary'>
 				Register
-			</button>
-		</div>
+			</Button>
+		</Box>
 	);
 };

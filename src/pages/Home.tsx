@@ -1,9 +1,20 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom';
-import styles from './Home.module.css';
 import { JWTStorageType } from '../Services/JWTStorage';
 import { FC, useEffect, useState } from 'react';
 import { DriverServiceType } from '../Services/DriverService';
 import { DriverStatus } from '../models/Driver';
+import {
+	Box,
+	Typography,
+	Button,
+	List,
+	ListItemButton,
+	ListItemText,
+	Toolbar,
+	AppBar,
+	Drawer,
+	Divider,
+} from '@mui/material';
 
 interface IProps {
 	jwtService: JWTStorageType;
@@ -46,82 +57,70 @@ const HomePage: FC<IProps> = (props) => {
 	}, [props.driverService, userMail, userRole]);
 
 	return (
-		<div className={styles.dashboardWrapper}>
-			<nav className={styles.sidebar}>
-				<ul className={styles.sidebarMenu}>
-					<li className={styles.sidebarMenuItem}>
-						<Link className={styles.sidebarLink} to='/profile'>
-							Profile
-						</Link>
-					</li>
+		<Box sx={{ display: 'flex' }}>
+			<Drawer
+				variant='permanent'
+				sx={{
+					width: 240,
+					flexShrink: 0,
+					[`& .MuiDrawer-paper`]: {
+						width: 240,
+						boxSizing: 'border-box',
+					},
+				}}
+			>
+				<Toolbar />
+				<Divider />
+				<List>
+					<ListItemButton component={Link} to='/profile'>
+						<ListItemText primary='Profile' />
+					</ListItemButton>
 					{userRole === 'CLIENT' && (
 						<>
-							<li className={styles.sidebarMenuItem}>
-								<Link
-									className={styles.sidebarLink}
-									to='/new-ride'
-								>
-									New ride
-								</Link>
-							</li>
-							<li className={styles.sidebarMenuItem}>
-								<Link
-									className={styles.sidebarLink}
-									to='/previous-rides-user'
-								>
-									Previous rides
-								</Link>
-							</li>
+							<ListItemButton component={Link} to='/new-ride'>
+								<ListItemText primary='New ride' />
+							</ListItemButton>
+							<ListItemButton
+								component={Link}
+								to='/previous-rides-user'
+							>
+								<ListItemText primary='Previous rides' />
+							</ListItemButton>
 						</>
 					)}
 					{userRole === 'ADMIN' && (
 						<>
-							<li className={styles.sidebarMenuItem}>
-								<Link
-									className={styles.sidebarLink}
-									to='/verification'
-								>
-									Verification
-								</Link>
-							</li>
-							<li className={styles.sidebarMenuItem}>
-								<Link
-									className={styles.sidebarLink}
-									to='/all-rides'
-								>
-									All rides
-								</Link>
-							</li>
+							<ListItemButton component={Link} to='/verification'>
+								<ListItemText primary='Verification' />
+							</ListItemButton>
+							<ListItemButton component={Link} to='/all-rides'>
+								<ListItemText primary='All rides' />
+							</ListItemButton>
 						</>
 					)}
 					{userRole === 'DRIVER' && (
 						<>
-							<li className={styles.sidebarMenuItem}>
-								<Link
-									className={styles.sidebarLink}
-									to='/new-rides'
-								>
-									New rides
-								</Link>
-							</li>
-							<li className={styles.sidebarMenuItem}>
-								<Link
-									className={styles.sidebarLink}
-									to='/my-rides'
-								>
-									My rides
-								</Link>
-							</li>
+							<ListItemButton component={Link} to='/new-rides'>
+								<ListItemText primary='New rides' />
+							</ListItemButton>
+							<ListItemButton component={Link} to='/my-rides'>
+								<ListItemText primary='My rides' />
+							</ListItemButton>
 						</>
 					)}
-				</ul>
-			</nav>
-			<div className={styles.mainContent}>
-				<header className={styles.topBar}>
-					<h1 className={styles.topBarTitle}>Dashboard</h1>
-					<div className={styles.userInfo}>
+				</List>
+			</Drawer>
+			<Box component='main' sx={{ flexGrow: 1, p: 3 }}>
+				<AppBar
+					position='fixed'
+					sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+				>
+					<Toolbar>
+						<Typography variant='h6' noWrap sx={{ flexGrow: 1 }}>
+							Dashboard
+						</Typography>
 						{userRole === 'DRIVER' && (
-							<p className={styles.userStatus}>
+							<Typography variant='body1' sx={{ marginRight: 2 }}>
 								{driverStatus === DriverStatus.NOT_VERIFIED
 									? 'Driver is not verified'
 									: driverStatus === DriverStatus.VERIFIED
@@ -129,20 +128,17 @@ const HomePage: FC<IProps> = (props) => {
 									: driverStatus === DriverStatus.BANNED
 									? 'Driver is banned'
 									: 'Unknown status'}
-							</p>
+							</Typography>
 						)}
-						<button
-							onClick={handleLogout}
-							className={styles.logoutButton}
-							type='button'
-						>
+						<Button color='inherit' onClick={handleLogout}>
 							Logout
-						</button>
-					</div>
-				</header>
+						</Button>
+					</Toolbar>
+				</AppBar>
+				<Toolbar />
 				<Outlet />
-			</div>
-		</div>
+			</Box>
+		</Box>
 	);
 };
 

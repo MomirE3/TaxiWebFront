@@ -1,13 +1,23 @@
 import { FC, useEffect, useState } from 'react';
-import styles from './PreviousRidesUser.module.css';
 import { RideServiceType } from '../Services/RideService';
 import { CreateRideResponse } from '../models/Ride';
+import {
+	Box,
+	Table,
+	TableBody,
+	TableCell,
+	TableContainer,
+	TableHead,
+	TableRow,
+	Paper,
+	Typography,
+} from '@mui/material';
 
 interface IProps {
 	rideService: RideServiceType;
 }
 
-const NewRidesDriver: FC<IProps> = (props) => {
+const PreviousRidesUser: FC<IProps> = (props) => {
 	const [rideData, setRideData] = useState<CreateRideResponse[]>([]);
 
 	useEffect(() => {
@@ -21,48 +31,44 @@ const NewRidesDriver: FC<IProps> = (props) => {
 	}, [props.rideService]);
 
 	return (
-		<div className={styles.tableContainer}>
-			<table className={styles.table}>
-				<thead>
-					<tr className={styles.row}>
-						<th className={styles.headerCell}>Created At</th>
-						<th className={styles.headerCell}>Start Address</th>
-						<th className={styles.headerCell}>End Address</th>
-						<th className={styles.headerCell}>Client Email</th>
-						<th className={styles.headerCell}>Driver Email</th>
-						<th className={styles.headerCell}>Status</th>
-						<th className={styles.headerCell}>Price</th>
-					</tr>
-				</thead>
-				<tbody>
-					{rideData.map((ride) => (
-						<tr
-							className={styles.row}
-							key={ride.createdAtTimestamp}
-						>
-							<td className={styles.dataCell}>
-								{ride.createdAtTimestamp}
-							</td>
-							<td className={styles.dataCell}>
-								{ride.startAddress}
-							</td>
-							<td className={styles.dataCell}>
-								{ride.endAddress}
-							</td>
-							<td className={styles.dataCell}>
-								{ride.clientEmail}
-							</td>
-							<td className={styles.dataCell}>
-								{ride.driverEmail ? ride.driverEmail : 'N/A'}
-							</td>
-							<td className={styles.dataCell}>{ride.status}</td>
-							<td className={styles.dataCell}>{ride.price}</td>
-						</tr>
-					))}
-				</tbody>
-			</table>
-		</div>
+		<Box sx={{ padding: 2 }}>
+			<Typography variant='h4' gutterBottom>
+				Previous Rides
+			</Typography>
+			<TableContainer component={Paper}>
+				<Table>
+					<TableHead>
+						<TableRow>
+							<TableCell>Created At</TableCell>
+							<TableCell>Start Address</TableCell>
+							<TableCell>End Address</TableCell>
+							<TableCell>Client Email</TableCell>
+							<TableCell>Driver Email</TableCell>
+							<TableCell>Status</TableCell>
+							<TableCell>Price</TableCell>
+						</TableRow>
+					</TableHead>
+					<TableBody>
+						{rideData.map((ride) => (
+							<TableRow key={ride.createdAtTimestamp}>
+								<TableCell>{ride.createdAtTimestamp}</TableCell>
+								<TableCell>{ride.startAddress}</TableCell>
+								<TableCell>{ride.endAddress}</TableCell>
+								<TableCell>{ride.clientEmail}</TableCell>
+								<TableCell>
+									{ride.driverEmail
+										? ride.driverEmail
+										: 'N/A'}
+								</TableCell>
+								<TableCell>{ride.status}</TableCell>
+								<TableCell>{ride.price}</TableCell>
+							</TableRow>
+						))}
+					</TableBody>
+				</Table>
+			</TableContainer>
+		</Box>
 	);
 };
 
-export default NewRidesDriver;
+export default PreviousRidesUser;

@@ -8,7 +8,6 @@ import { Profile, UpdateUserProfileRequest } from '../models/Auth/Profile';
 const AUTH_CONTROLLER_URL = `${process.env.REACT_APP_BACKEND_URL}/auth`;
 
 async function Login(loginData: LoginData) {
-	console.log(loginData);
 	try {
 		if (loginData.Password) {
 			loginData.Password = sha256(loginData.Password).toString();
@@ -39,17 +38,25 @@ async function Register(registerData: RegisterData) {
 
 async function UpdateProfile(updateData: UpdateUserProfileRequest) {
 	const jtwToken = JWTStorage.getJWT();
+
+	let dataToSend = updateData;
+	if(updateData.password){
+		dataToSend = {
+			...dataToSend,
+			password: sha256(updateData.password).toString()
+		} as UpdateUserProfileRequest
+	}
+	
 	try {
 		const res = await axios.patch(
 			`${AUTH_CONTROLLER_URL}/update-profile`,
-			updateData,
+			dataToSend,
 			{
 				headers: {
 					Authorization: `Bearer ${jtwToken?.token}`,
 				},
 			}
 		);
-		console.log(res);
 		return res.data;
 	} catch {
 		return null;
@@ -64,7 +71,6 @@ async function GetProfile() {
 				Authorization: `Bearer ${jtwToken?.token}`,
 			},
 		});
-		console.log(res);
 		return res.data;
 	} catch {
 		return null;

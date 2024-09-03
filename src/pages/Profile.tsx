@@ -1,10 +1,21 @@
 import { ChangeEvent, FC, FormEvent, useEffect, useState } from 'react';
-import styles from './Profile.module.css';
 import { UserType } from '../models/Auth/UserType';
 import { Profile, UpdateUserProfileRequest } from '../models/Auth/Profile';
 import { AuthServiceType } from '../Services/AuthService';
 import { BlobServiceType } from '../Services/BlobService';
 import { SHA256 } from 'crypto-js';
+import {
+	Box,
+	TextField,
+	Button,
+	Select,
+	MenuItem,
+	InputLabel,
+	FormControl,
+	Typography,
+	Avatar,
+	SelectChangeEvent,
+} from '@mui/material';
 
 interface IProps {
 	authService: AuthServiceType;
@@ -39,9 +50,8 @@ const ProfilePage: FC<IProps> = (props) => {
 		const fetchProfile = async () => {
 			const data = await props.authService.GetProfile();
 			if (data) {
-				console.log(data);
-				setFormData(data);
-				setOriginalData(data); // Sačuvaj originalne podatke
+				setFormData({ ...data, password: '' });
+				setOriginalData(data);
 			}
 		};
 		fetchProfile();
@@ -53,7 +63,6 @@ const ProfilePage: FC<IProps> = (props) => {
 				const blobName = getLastPartOfUrl(formData.imagePath as string);
 				const data = await props.blobService.GetImageUrl(blobName);
 				if (data) {
-					console.log(data);
 					setImageUrl(data);
 				}
 			}
@@ -62,13 +71,21 @@ const ProfilePage: FC<IProps> = (props) => {
 		fetchImage();
 	}, [props.blobService, formData.imagePath]);
 
-	const handleChange = (
-		e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+	const handleInputChange = (
+		e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
 	) => {
 		const { name, value } = e.target;
 		setFormData({
 			...formData,
 			[name]: value,
+		});
+	};
+
+	const handleSelectChange = (e: SelectChangeEvent<UserType>) => {
+		const { name, value } = e.target;
+		setFormData({
+			...formData,
+			[name as keyof Profile]: value as string,
 		});
 	};
 
@@ -93,7 +110,9 @@ const ProfilePage: FC<IProps> = (props) => {
 				formData[key as keyof Profile] !==
 				originalData[key as keyof Profile]
 			) {
-				(updatedData as any)[key] = formData[key as keyof Profile];
+				if (key !== 'password' || formData.password) {
+					(updatedData as any)[key] = formData[key as keyof Profile];
+				}
 			}
 		}
 
@@ -103,32 +122,38 @@ const ProfilePage: FC<IProps> = (props) => {
 			formDataReq.append('fileName', localImageName!);
 			const hashedEmail = SHA256(formData.email).toString();
 
-			const uploadImgRes = await props.blobService.UploadProfileImage(
-				formDataReq,
-				hashedEmail
-			);
-
-			updatedData.imagePath = uploadImgRes;
+			try {
+				const uploadImgRes = await props.blobService.UploadProfileImage(
+					formDataReq,
+					hashedEmail
+				);
+				updatedData.imagePath = uploadImgRes;
+			} catch (error) {
+				alert('Failed to upload the image. Please try again.');
+				return;
+			}
 		}
 
-		console.log(updatedData);
-
-		await props.authService.UpdateProfile(updatedData);
+		try {
+			await props.authService.UpdateProfile(updatedData);
+			alert('Profile updated successfully!');
+		} catch (error) {
+			alert('Failed to update the profile. Please try again.');
+		}
 	};
 
 	function formatDateForInput(dateString: string) {
-		if (!dateString) return getDefaultDate(); // Ako je datum prazan, vrati default datum
+		if (!dateString) return getDefaultDate();
 
 		const date = new Date(dateString);
 
 		if (isNaN(date.getTime()) || date.getFullYear() < 1000) {
-			return getDefaultDate(); // Ako je datum nevalidan, vrati default datum
+			return getDefaultDate();
 		}
 
 		const year = date.getFullYear();
 		const month = String(date.getMonth() + 1).padStart(2, '0');
 		const day = String(date.getDate()).padStart(2, '0');
-		console.log(`${year}-${month}-${day}`);
 		return `${year}-${month}-${day}`;
 	}
 
@@ -137,100 +162,115 @@ const ProfilePage: FC<IProps> = (props) => {
 		const year = today.getFullYear();
 		const month = String(today.getMonth() + 1).padStart(2, '0');
 		const day = String(today.getDate()).padStart(2, '0');
-		return `${year}-${month}-${day}`; // Vraća današnji datum u formatu YYYY-MM-DD
+		return `${year}-${month}-${day}`;
 	}
 
 	return (
-		<form className={styles.form} onSubmit={handleSubmit}>
-			<div className={styles.formGroup}>
-				<input
-					placeholder='Username'
-					value={formData.username}
-					type='text'
-					name='username'
-					onChange={handleChange}
-					className={styles.input}
-				/>
-			</div>
-			<div className={styles.formGroup}>
-				<input
-					placeholder='Email'
-					value={formData.email}
-					type='email'
-					name='email'
-					onChange={handleChange}
-					className={styles.input}
-				/>
-			</div>
-			<div className={styles.formGroup}>
-				<input
-					placeholder='Password'
-					value={formData.password}
-					type='password'
-					name='password'
-					onChange={handleChange}
-					className={styles.input}
-				/>
-			</div>
-			<div className={styles.formGroup}>
-				<input
-					placeholder='Full Name'
-					value={formData.fullname}
-					type='text'
-					name='fullname'
-					onChange={handleChange}
-					className={styles.input}
-				/>
-			</div>
-			<div className={styles.formGroup}>
-				<input
-					placeholder='Birth Date'
-					value={formatDateForInput(formData.dateOfBirth)}
-					type='date'
-					name='dateOfBirth'
-					onChange={handleChange}
-					className={styles.input}
-				/>
-			</div>
-			<div className={styles.formGroup}>
-				<input
-					placeholder='Address'
-					value={formData.address}
-					type='text'
-					name='address'
-					onChange={handleChange}
-					className={styles.input}
-				/>
-			</div>
-			<div className={styles.formGroup}>
-				<label htmlFor='userType'>Tip korisnika</label>
-				<select
+		<Box
+			component='form'
+			sx={{
+				display: 'flex',
+				flexDirection: 'column',
+				gap: 2,
+				maxWidth: 400,
+				margin: 'auto',
+			}}
+			onSubmit={handleSubmit}
+		>
+			<TextField
+				label='Username'
+				value={formData.username}
+				type='text'
+				name='username'
+				onChange={handleInputChange}
+				fullWidth
+				variant='outlined'
+			/>
+
+			<TextField
+				label='Email'
+				value={formData.email}
+				type='email'
+				name='email'
+				onChange={handleInputChange}
+				fullWidth
+				variant='outlined'
+				InputProps={{
+					readOnly: true,
+				}}
+			/>
+
+			<TextField
+				label='Password'
+				value={formData.password}
+				type='password'
+				name='password'
+				onChange={handleInputChange}
+				fullWidth
+				variant='outlined'
+			/>
+
+			<TextField
+				label='Full Name'
+				value={formData.fullname}
+				type='text'
+				name='fullname'
+				onChange={handleInputChange}
+				fullWidth
+				variant='outlined'
+			/>
+
+			<TextField
+				label='Birth Date'
+				value={formatDateForInput(formData.dateOfBirth)}
+				type='date'
+				name='dateOfBirth'
+				onChange={handleInputChange}
+				fullWidth
+				variant='outlined'
+			/>
+
+			<TextField
+				label='Address'
+				value={formData.address}
+				type='text'
+				name='address'
+				onChange={handleInputChange}
+				fullWidth
+				variant='outlined'
+			/>
+
+			<FormControl fullWidth variant='outlined'>
+				<InputLabel id='userType-label'>User Type</InputLabel>
+				<Select
+					labelId='userType-label'
 					id='userType'
 					name='type'
 					value={formData.type}
-					onChange={handleChange}
-					className={styles.select}
+					label='User Type'
+					onChange={handleSelectChange}
+					disabled
 				>
-					<option value={UserType.Admin}>Administrator</option>
-					<option value={UserType.Client}>User</option>
-					<option value={UserType.Driver}>Driver</option>
-				</select>
-			</div>
-			<div className={styles.formGroup}>
-				<label htmlFor='image'>Upload Image</label>
+					<MenuItem value={UserType.Admin}>Administrator</MenuItem>
+					<MenuItem value={UserType.Client}>User</MenuItem>
+					<MenuItem value={UserType.Driver}>Driver</MenuItem>
+				</Select>
+			</FormControl>
+
+			<Button variant='contained' component='label'>
+				Upload Image
 				<input
 					type='file'
-					id='image'
-					name='image'
+					hidden
 					accept='image/*'
 					onChange={handleImageChange}
-					className={styles.input}
 				/>
-			</div>
+			</Button>
+
 			{formData.imagePath && (
-				<div className={styles.imagePreview}>
-					<img
-						width={100}
+				<Box sx={{ textAlign: 'center', mt: 2 }}>
+					<Avatar
+						sx={{ width: 100, height: 100 }}
 						src={
 							formData.imagePath instanceof File
 								? URL.createObjectURL(formData.imagePath)
@@ -238,12 +278,13 @@ const ProfilePage: FC<IProps> = (props) => {
 						}
 						alt='Preview'
 					/>
-				</div>
+				</Box>
 			)}
-			<button type='submit' className={styles.submitButton}>
+
+			<Button type='submit' variant='contained' color='primary'>
 				Submit
-			</button>
-		</form>
+			</Button>
+		</Box>
 	);
 };
 
