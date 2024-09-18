@@ -7,11 +7,11 @@ export enum DriverStatus {
 }
 
 export interface UpdateDriverStatusData {
-	Email: string;
 	Status: DriverStatus;
 }
 
 export interface Driver extends Profile {
+	driverId: string;
 	status: DriverStatus;
 	rating?: number;
 }

@@ -50,15 +50,13 @@ const PreviousRidesUser: FC<IProps> = (props) => {
 					</TableHead>
 					<TableBody>
 						{rideData.map((ride) => (
-							<TableRow key={ride.createdAtTimestamp}>
+							<TableRow key={ride.id}>
 								<TableCell>{ride.createdAtTimestamp}</TableCell>
 								<TableCell>{ride.startAddress}</TableCell>
 								<TableCell>{ride.endAddress}</TableCell>
-								<TableCell>{ride.clientEmail}</TableCell>
+								<TableCell>{ride.clientId}</TableCell>
 								<TableCell>
-									{ride.driverEmail
-										? ride.driverEmail
-										: 'N/A'}
+									{ride.driverId ?? 'N/A'}
 								</TableCell>
 								<TableCell>{ride.status}</TableCell>
 								<TableCell>{ride.price}</TableCell>

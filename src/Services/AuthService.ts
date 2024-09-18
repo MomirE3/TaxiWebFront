@@ -4,6 +4,7 @@ import { RegisterData } from '../models/Auth/RegisterData';
 import sha256 from 'crypto-js/sha256';
 import { JWTStorage } from './JWTStorage';
 import { Profile, UpdateUserProfileRequest } from '../models/Auth/Profile';
+import { UserType } from '../models/Auth/UserType';
 
 const AUTH_CONTROLLER_URL = `${process.env.REACT_APP_BACKEND_URL}/auth`;
 
@@ -25,9 +26,14 @@ async function Register(registerData: RegisterData) {
 		if (registerData.Password) {
 			registerData.Password = sha256(registerData.Password).toString();
 		}
+		registerData.Type = registerData.Type as UserType;
+		const registerDataToSend = {
+			...registerData,
+			Type: Number.parseInt(registerData.Type.toString())
+		}
 		const res = await axios.post(
 			`${AUTH_CONTROLLER_URL}/register`,
-			registerData
+			registerDataToSend
 		);
 		return res;
 	} catch (error) {

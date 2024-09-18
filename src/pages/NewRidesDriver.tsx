@@ -40,7 +40,8 @@ const NewRidesDriver: FC<IProps> = (props) => {
 
 	const [driverStatus, setDriverStatus] = useState<DriverStatus>();
 	const [userRole, setUserRole] = useState('');
-	const [userMail, setUserMail] = useState('');
+	const [userId, setUserId] = useState('');
+	const [userRoleId, setUserRoleId] = useState('');
 
 	const [acceptedRide, setAcceptedRide] = useState<CreateRideResponse | null>(
 		null
@@ -62,7 +63,8 @@ const NewRidesDriver: FC<IProps> = (props) => {
 			const decoded = props.jwtService.decodeJWT(token.token);
 			if (decoded) {
 				setUserRole(decoded.role);
-				setUserMail(decoded.email);
+				setUserId(decoded.nameid);
+				setUserRoleId(decoded.groupsid);
 			}
 		}
 	}, [props.jwtService]);
@@ -71,14 +73,14 @@ const NewRidesDriver: FC<IProps> = (props) => {
 		if (userRole === 'DRIVER') {
 			const fetchRides = async () => {
 				const data = await props.driverService.GetDriverStatus(
-					userMail
+					userRoleId
 				);
 				setDriverStatus(data);
 			};
 
 			fetchRides();
 		}
-	}, [props.driverService, userMail, userRole]);
+	}, [props.driverService, userRoleId, userRole]);
 
 	useEffect(() => {
 		const fetchRides = async () => {
@@ -90,13 +92,9 @@ const NewRidesDriver: FC<IProps> = (props) => {
 		fetchRides();
 	}, [props.rideService]);
 
-	const handleAcceptRide = async (
-		ClientEmail: string,
-		RideCreatedAtTimestamp: number
-	) => {
+	const handleAcceptRide = async (rideId: string) => {
 		const updateRequest: UpdateRideRequest = {
-			ClientEmail,
-			RideCreatedAtTimestamp,
+			RideId: rideId,
 			Status: RideStatus.ACCEPTED,
 		};
 
@@ -152,7 +150,7 @@ const NewRidesDriver: FC<IProps> = (props) => {
 					rideDurationRef.current -= 1;
 					setRideDuration(rideDurationRef.current);
 				}
-			}, 1000);
+			}, 100);
 		}
 
 		return () => {
@@ -197,15 +195,13 @@ const NewRidesDriver: FC<IProps> = (props) => {
 					</TableHead>
 					<TableBody>
 						{rideData.map((ride) => (
-							<TableRow key={ride.createdAtTimestamp}>
+							<TableRow key={ride.id}>
 								<TableCell>{ride.createdAtTimestamp}</TableCell>
 								<TableCell>{ride.startAddress}</TableCell>
 								<TableCell>{ride.endAddress}</TableCell>
-								<TableCell>{ride.clientEmail}</TableCell>
+								<TableCell>{ride.clientId}</TableCell>
 								<TableCell>
-									{ride.driverEmail
-										? ride.driverEmail
-										: 'N/A'}
+									{ride.driverId ?? 'N/A'}
 								</TableCell>
 								<TableCell>{ride.status}</TableCell>
 								<TableCell>{ride.price}</TableCell>
@@ -215,8 +211,7 @@ const NewRidesDriver: FC<IProps> = (props) => {
 										color='primary'
 										onClick={() =>
 											handleAcceptRide(
-												ride.clientEmail,
-												ride.createdAtTimestamp
+												ride.id
 											)
 										}
 										disabled={

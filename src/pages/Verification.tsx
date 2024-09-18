@@ -58,13 +58,12 @@ const Verification: FC<IProps> = (props) => {
 		action: string
 	) {
 		const request: UpdateDriverStatusData = {
-			Email: driver.email,
 			Status: status,
 		};
 
 		try {
 			const response = await props.driverService.UpdateDriverStatus(
-				request
+				request, driver.id!
 			);
 
 			if (response && response.status === 200) {
